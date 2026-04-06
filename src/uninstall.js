@@ -16,7 +16,31 @@ function prompt(question) {
 }
 
 async function uninstall() {
-  console.log("Bryonics Uninstall\n");
+  console.log("think& Uninstall\n");
+
+  // 0. Notify server (best effort)
+  if (fs.existsSync(P.CONFIG_PATH)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(P.CONFIG_PATH, "utf8"));
+      if (config.api_key && config.api_url) {
+        const http = require("http");
+        const https = require("https");
+        const url = new URL("/v1/org/uninstall", config.api_url);
+        const mod = url.protocol === "https:" ? https : http;
+        const req = mod.request(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${config.api_key}`,
+          },
+          timeout: 3000,
+        });
+        req.write("{}");
+        req.end();
+        console.log("  Notified server.");
+      }
+    } catch (e) {}
+  }
 
   // 1. Read install state
   let state = {};

@@ -35,6 +35,10 @@ const filesToCopy = {
   "commands/team.md": path.join(sourceDir, "commands", "team.md"),
   "commands/ask-team.md": path.join(sourceDir, "commands", "ask-team.md"),
   "commands/week-team.md": path.join(sourceDir, "commands", "week-team.md"),
+  "commands/architecture.md": path.join(sourceDir, "commands", "architecture.md"),
+  "commands/team-invite.md": path.join(sourceDir, "commands", "team-invite.md"),
+  "lib/architecture.py": path.join(sourceDir, "lib", "architecture.py"),
+  "lib/team_invite.py": path.join(sourceDir, "lib", "team_invite.py"),
 };
 
 // Clean and recreate release dir
