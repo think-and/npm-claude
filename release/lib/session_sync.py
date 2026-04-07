@@ -20,7 +20,7 @@ import re
 import subprocess
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from bryonics_client import load_config, api_request
+from bryonics_client import load_config, save_config, api_request
 
 # ── Constants ──
 
@@ -48,6 +48,7 @@ MAX_DECISIONS = 3
 MAX_ERRORS = 3
 MAX_TOTAL_PER_RUN = 100
 MIN_SESSION_ENTRIES = 10
+VALID_MODES = ("all", "folder")
 
 
 # ── Sync state ──
@@ -90,20 +91,40 @@ def detect_git_root(cwd):
         return ""
 
 
-def find_transcript_files():
-    """Find all main session JSONL files (skip subagents)."""
+def find_transcript_files(mode="folder"):
+    """Find session JSONL files (skip subagents).
+
+    mode="folder": scan only the current project's folder (derived from git root / cwd).
+    mode="all": scan all project folders under ~/.claude/projects.
+    """
     if not os.path.exists(CLAUDE_PROJECTS_DIR):
         return []
 
+    if mode == "all":
+        search_dirs = [
+            d for d in glob.glob(os.path.join(CLAUDE_PROJECTS_DIR, "*"))
+            if os.path.isdir(d)
+        ]
+    else:
+        cwd = os.getcwd()
+        git_root = detect_git_root(cwd)
+        project_path = git_root if git_root else cwd
+        # Claude Code folder convention: /Users/foo/bar -> -Users-foo-bar
+        project_folder = project_path.replace("/", "-")
+        search_dirs = [os.path.join(CLAUDE_PROJECTS_DIR, project_folder)]
+
     files = []
-    for jsonl in glob.glob(os.path.join(CLAUDE_PROJECTS_DIR, "*", "*.jsonl")):
-        # Skip subagent files
-        if "/subagents/" in jsonl or "agent-" in os.path.basename(jsonl):
+    for project_dir in search_dirs:
+        if not os.path.isdir(project_dir):
             continue
-        # Must be a UUID-style filename
-        basename = os.path.basename(jsonl).replace(".jsonl", "")
-        if len(basename) >= 30 and "-" in basename:
-            files.append(jsonl)
+        for jsonl in glob.glob(os.path.join(project_dir, "*.jsonl")):
+            # Skip subagent files
+            if "agent-" in os.path.basename(jsonl):
+                continue
+            # Must be a UUID-style filename
+            basename = os.path.basename(jsonl).replace(".jsonl", "")
+            if len(basename) >= 30 and "-" in basename:
+                files.append(jsonl)
     return files
 
 
@@ -282,12 +303,38 @@ def main():
         print("No Bryonics config found. Run install.sh first.")
         return
 
+    # ── CLI arg parsing ──
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
+
+    if arg == "set-default":
+        value = sys.argv[2] if len(sys.argv) > 2 else None
+        if value not in VALID_MODES:
+            print("Usage: /sync set-default <all|folder>")
+            return
+        save_config({"sync_default": value})
+        print("Default sync mode set to '{}'.".format(value))
+        return
+
+    # Resolve mode
+    if arg in VALID_MODES:
+        mode = arg
+    elif arg:
+        print("Unknown mode '{}'. Use: all, folder, or set-default <mode>.".format(arg))
+        return
+    else:
+        mode = cfg.get("sync_default", None)
+
+    show_hint = mode is None
+    if mode is None:
+        mode = "folder"
+
     team_id = cfg.get("team_id")
     user = cfg.get("user_id", os.environ.get("USER", "unknown"))
 
-    transcript_files = find_transcript_files()
+    transcript_files = find_transcript_files(mode)
     if not transcript_files:
-        print("No Claude Code session transcripts found.")
+        label = "any project" if mode == "all" else "this project"
+        print("No Claude Code session transcripts found for {}.".format(label))
         return
 
     sync_state = load_sync_state()
@@ -316,10 +363,10 @@ def main():
 
         # Detect project context from first entry
         first_entry = entries[0] if entries else {}
-        cwd = first_entry.get("cwd", "")
-        project = os.path.basename(cwd) if cwd else "unknown"
+        session_cwd = first_entry.get("cwd", "")
+        project = os.path.basename(session_cwd) if session_cwd else "unknown"
         branch = first_entry.get("gitBranch", "")
-        git_root = detect_git_root(cwd) if cwd else ""
+        git_root = detect_git_root(session_cwd) if session_cwd else ""
 
         # Extract memories
         memories = []
@@ -350,7 +397,7 @@ def main():
                 "branch": branch,
                 "memory_type": mem["type"],
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "cwd": cwd,
+                "cwd": session_cwd,
             }
 
             body = {
@@ -383,6 +430,9 @@ def main():
             sessions_processed, total_synced))
     else:
         print("No new memories to sync.")
+
+    if show_hint:
+        print("Synced current project only. Use /sync all for all projects, or /sync set-default <mode>.")
 
 
 if __name__ == "__main__":
