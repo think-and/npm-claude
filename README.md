@@ -84,6 +84,8 @@ Recent episodes:
 
 This is powered by **episode segmentation** — each coding session is split into episodes (by time gaps, topic shifts, or explicit goal changes), and each episode captures the goal, decisions, errors, outcome, and what's still open.
 
+**Requires `/sync` first.** Episode memories are extracted from your Claude Code transcripts when you run `/sync`. Without it, there's no episode data for resume to surface. Run `/sync` at the end of a session (or periodically) to keep resume context fresh.
+
 Resume triggers automatically on:
 - First prompt of a new session (`capture_count == 0`)
 - Short prompts: `continue`, `resume`, `carry on`
