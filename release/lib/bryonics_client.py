@@ -27,6 +27,15 @@ def load_config() -> dict:
         return {}
 
 
+def save_config(cfg: dict):
+    """Merge cfg into ~/.bryonics/config.json and write back."""
+    existing = load_config()
+    existing.update(cfg)
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(existing, f, indent=2)
+
+
 def get_project_hash() -> str:
     """MD5 hash of the git root or cwd. Used for per-project session files."""
     try:

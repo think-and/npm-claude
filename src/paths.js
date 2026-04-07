@@ -5,6 +5,20 @@ const path = require("path");
 
 const HOME = os.homedir();
 
+function getClaudePaths(installLevel) {
+  if (installLevel !== "folder" && installLevel !== "user") {
+    throw new Error(`Unknown install level: ${installLevel}`);
+  }
+  const base = installLevel === "folder"
+    ? path.join(process.cwd(), ".claude")
+    : path.join(HOME, ".claude");
+  return {
+    CLAUDE_DIR: base,
+    SETTINGS_PATH: path.join(base, "settings.json"),
+    COMMANDS_DIR: path.join(base, "commands"),
+  };
+}
+
 module.exports = {
   HOME,
   BRYONICS_DIR: path.join(HOME, ".bryonics"),
@@ -19,4 +33,6 @@ module.exports = {
 
   RECALL_CMD: "python3 ~/.bryonics/current/hooks/recall.py",
   CAPTURE_CMD: "python3 ~/.bryonics/current/hooks/capture.py",
+
+  getClaudePaths,
 };

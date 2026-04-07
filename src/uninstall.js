@@ -50,10 +50,11 @@ async function uninstall() {
     } catch (e) {}
   }
 
-  // 2. Remove hooks from settings.json using exact commands from state
+  // 2. Remove hooks from settings.json using exact commands and path from state
   const managedHooks = state.managed_hooks || [P.RECALL_CMD, P.CAPTURE_CMD];
-  removeHooks(managedHooks);
-  console.log("  Removed hooks from ~/.claude/settings.json");
+  const settingsPath = state.settings_path || P.SETTINGS_PATH;
+  removeHooks(managedHooks, settingsPath);
+  console.log(`  Removed hooks from ${settingsPath}`);
 
   // 3. Remove managed command symlinks
   const symlinks = state.managed_symlinks || [];
