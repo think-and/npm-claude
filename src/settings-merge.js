@@ -3,18 +3,19 @@
 const fs = require("fs");
 const { SETTINGS_PATH, RECALL_CMD, CAPTURE_CMD } = require("./paths");
 
-function mergeHooks() {
+function mergeHooks(settingsPath) {
+  const targetPath = settingsPath || SETTINGS_PATH;
   let settings = {};
-  if (fs.existsSync(SETTINGS_PATH)) {
+  if (fs.existsSync(targetPath)) {
     try {
-      settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, "utf8"));
+      settings = JSON.parse(fs.readFileSync(targetPath, "utf8"));
     } catch (e) {
-      console.log(`  Warning: ${SETTINGS_PATH} is invalid JSON. Backing up and starting fresh.`);
-      fs.copyFileSync(SETTINGS_PATH, SETTINGS_PATH + ".invalid.bak");
+      console.log(`  Warning: ${targetPath} is invalid JSON. Backing up and starting fresh.`);
+      fs.copyFileSync(targetPath, targetPath + ".invalid.bak");
       settings = {};
     }
     // Backup valid file before modifying
-    fs.copyFileSync(SETTINGS_PATH, SETTINGS_PATH + ".bak");
+    fs.copyFileSync(targetPath, targetPath + ".bak");
   }
 
   settings.hooks = settings.hooks || {};
@@ -47,22 +48,23 @@ function mergeHooks() {
   filteredPtu.push(bryonicsCapture);
   settings.hooks.PostToolUse = filteredPtu;
 
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + "\n");
+  fs.writeFileSync(targetPath, JSON.stringify(settings, null, 2) + "\n");
   return true;
 }
 
-function removeHooks(managedHooks) {
-  if (!fs.existsSync(SETTINGS_PATH)) return;
+function removeHooks(managedHooks, settingsPath) {
+  const targetPath = settingsPath || SETTINGS_PATH;
+  if (!fs.existsSync(targetPath)) return;
 
   let settings;
   try {
-    settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, "utf8"));
+    settings = JSON.parse(fs.readFileSync(targetPath, "utf8"));
   } catch (e) {
     return;
   }
 
   if (!settings.hooks) return;
-  fs.copyFileSync(SETTINGS_PATH, SETTINGS_PATH + ".bak");
+  fs.copyFileSync(targetPath, targetPath + ".bak");
 
   const hookCmds = new Set(managedHooks || [RECALL_CMD, CAPTURE_CMD]);
 
@@ -80,7 +82,7 @@ function removeHooks(managedHooks) {
     delete settings.hooks;
   }
 
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + "\n");
+  fs.writeFileSync(targetPath, JSON.stringify(settings, null, 2) + "\n");
 }
 
 module.exports = { mergeHooks, removeHooks };

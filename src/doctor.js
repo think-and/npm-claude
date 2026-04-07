@@ -26,6 +26,11 @@ function doctor() {
   let passed = 0;
   let total = 0;
 
+  let installState = {};
+  try {
+    installState = JSON.parse(fs.readFileSync(P.INSTALL_STATE, "utf8"));
+  } catch (e) {}
+
   // 1. Config
   total++;
   if (check("Config exists and is valid JSON", () => {
@@ -64,10 +69,12 @@ function doctor() {
   })) passed++;
 
   // 4. Hooks in settings.json
+  const settingsPath = installState.settings_path || P.SETTINGS_PATH;
+
   total++;
-  if (check("Hooks configured in ~/.claude/settings.json", () => {
-    if (!fs.existsSync(P.SETTINGS_PATH)) return "settings.json not found";
-    const settings = JSON.parse(fs.readFileSync(P.SETTINGS_PATH, "utf8"));
+  if (check(`Hooks configured in ${settingsPath}`, () => {
+    if (!fs.existsSync(settingsPath)) return `${settingsPath} not found`;
+    const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
     const hooks = settings.hooks || {};
     const hasRecall = (hooks.UserPromptSubmit || []).some(
       (h) => h.hooks && h.hooks.some((hh) => hh.command === P.RECALL_CMD)
@@ -83,9 +90,8 @@ function doctor() {
   // 5. Command symlinks
   total++;
   if (check("Command symlinks resolve", () => {
-    if (!fs.existsSync(P.INSTALL_STATE)) return "install-state.json not found";
-    const state = JSON.parse(fs.readFileSync(P.INSTALL_STATE, "utf8"));
-    const broken = (state.managed_symlinks || []).filter(
+    if (!installState.installed_version) return "install-state.json not found";
+    const broken = (installState.managed_symlinks || []).filter(
       (s) => !fs.existsSync(s)
     );
     if (broken.length > 0) return `${broken.length} broken symlink(s)`;

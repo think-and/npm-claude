@@ -7,6 +7,7 @@ const http = require("http");
 const https = require("https");
 const readline = require("readline");
 const P = require("./paths");
+const { getClaudePaths } = P;
 const { mergeHooks } = require("./settings-merge");
 
 function prompt(question, defaultVal) {
@@ -157,12 +158,42 @@ async function install(args) {
   return installRelease(config, force);
 }
 
+async function resolveInstallLevel() {
+  let state = {};
+  try {
+    state = JSON.parse(fs.readFileSync(P.INSTALL_STATE, "utf8"));
+  } catch (e) {}
+
+  // Prior install with explicit paths — use stored paths as source of truth
+  if (state.settings_path) {
+    return {
+      level: state.install_level || "user",
+      CLAUDE_DIR: path.dirname(state.settings_path),
+      SETTINGS_PATH: state.settings_path,
+      COMMANDS_DIR: state.commands_dir || path.join(path.dirname(state.settings_path), "commands"),
+    };
+  }
+
+  // Prior install without paths (pre-folder-level feature) — user-level
+  if (state.installed_version) {
+    return { level: "user", ...getClaudePaths("user") };
+  }
+
+  const cwd = process.cwd();
+  console.log("\n  Install hooks to:");
+  console.log(`  1. This folder only (${cwd}/.claude/)`);
+  console.log("  2. User level, all projects (~/.claude/)\n");
+  const choice = await prompt("Choose (1 or 2)", "2");
+  const level = choice === "1" ? "folder" : "user";
+  return { level, ...getClaudePaths(level) };
+}
+
 async function installRelease(config, force) {
-  // Create directories
-  fs.mkdirSync(P.BRYONICS_DIR, { recursive: true });
+  const { level, SETTINGS_PATH: targetSettingsPath, COMMANDS_DIR: targetCommandsDir } = await resolveInstallLevel();
+
   fs.mkdirSync(P.RELEASES_DIR, { recursive: true });
   fs.mkdirSync(P.SESSIONS_DIR, { recursive: true });
-  fs.mkdirSync(P.COMMANDS_DIR, { recursive: true });
+  fs.mkdirSync(targetCommandsDir, { recursive: true });
 
   // Write config
   fs.writeFileSync(P.CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
@@ -204,7 +235,7 @@ async function installRelease(config, force) {
   if (fs.existsSync(commandsSource)) {
     for (const file of fs.readdirSync(commandsSource)) {
       if (!file.endsWith(".md")) continue;
-      const target = path.join(P.COMMANDS_DIR, file);
+      const target = path.join(targetCommandsDir, file);
       const source = path.join(commandsSource, file);
 
       if (fs.existsSync(target)) {
@@ -223,13 +254,16 @@ async function installRelease(config, force) {
   console.log(`  ✓ ${managedSymlinks.length} command symlinks`);
 
   // Merge hooks
-  mergeHooks();
-  console.log("  ✓ Hooks merged into settings.json");
+  mergeHooks(targetSettingsPath);
+  console.log(`  ✓ Hooks merged into ${targetSettingsPath}`);
 
   // Save install state
   const installState = {
     installed_version: version,
     installed_at: new Date().toISOString(),
+    install_level: level,
+    settings_path: targetSettingsPath,
+    commands_dir: targetCommandsDir,
     managed_symlinks: managedSymlinks,
     managed_hooks: [P.RECALL_CMD, P.CAPTURE_CMD],
   };
