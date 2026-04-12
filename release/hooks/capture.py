@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.expanduser("~/.bryonics/current/lib"))
 from bryonics_client import (
     load_config, load_session, save_session,
     get_project_name, get_branch, store_memory, content_hash,
+    resolve_profile, IGNORE, canonical_cwd,
 )
 
 # Trivial commands to skip
@@ -43,12 +44,24 @@ def repo_relative_path(file_path):
 
 
 def main():
+    # Resolve profile for the current folder. This replaces the old
+    # "must have team_id" short-circuit — now personal profiles (team-of-one
+    # on the server) are first-class, and unbound folders are a distinct
+    # state that warns once per 6h instead of silently skipping.
+    profile = resolve_profile()
+    if profile is IGNORE:
+        sys.exit(0)  # explicitly silenced folder
+    if profile is None:
+        # Unbound folder: bryonics_client rate-limits the stderr warning
+        # from resolve_profile for env-var failures; for pure "no binding"
+        # we keep quiet here and let the user discover via /profile.
+        sys.exit(0)
+
     cfg = load_config()
     if not cfg:
         sys.exit(0)
 
-    # Must have team_id — personal memory is Claude Code's job
-    team_id = cfg.get("team_id")
+    team_id = cfg.get("team_id") or profile.get("team_id")
     if not team_id:
         sys.exit(0)
 
@@ -112,13 +125,17 @@ def main():
     # Canonicalize file path to repo-relative
     rel_path = repo_relative_path(file_path) if file_path else ""
 
-    # Store to team namespace
+    # Store to team namespace.
+    # cwd is the canonical git-root of this capture's folder — required
+    # for precise purge-by-cwd on the server. Falls back to os.getcwd()
+    # if git resolution fails.
     metadata = {
         "project": project,
         "branch": branch,
         "file_path": rel_path,
         "tool": tool,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "cwd": canonical_cwd(),
     }
     if command:
         metadata["command"] = command[:200]
@@ -126,6 +143,14 @@ def main():
         metadata["exit_status"] = exit_status
 
     store_memory(cfg, memory, team_id=team_id, metadata=metadata)
+
+    # Delta code sync: upload changed file contents on Edit/Write
+    if tool in ("Edit", "Write") and file_path:
+        try:
+            from code_sync import sync_single_file
+            sync_single_file(cfg, file_path, project, branch)
+        except Exception:
+            pass  # code sync is optional, never block capture
 
     # Update session state
     session["last_capture_hash"] = h

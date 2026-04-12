@@ -1,15 +1,15 @@
 {
   "version": "0.4.0",
-  "released_at": "2026-04-06T22:40:44.943Z",
+  "released_at": "2026-04-12T05:37:01.028Z",
   "files": {
     "hooks/recall.py": {
-      "sha256": "a01ae3f90c790318c85848bb179de7b69a3c632e6af6ed7b29509d16be69aa31"
+      "sha256": "703c7c6043a9568b23137af0dfdaf97ca5d627a11fe7eb6cc58e24b66d0f1588"
     },
     "hooks/capture.py": {
-      "sha256": "af9791d1f278b1d300951a06c1b7530be05c26cfb97ba42f9934f4487f21a257"
+      "sha256": "d419655d654aa559a05d2227a1b3a63d3667bd4ec52af5f11a6657c069ba3549"
     },
     "lib/bryonics_client.py": {
-      "sha256": "845549fc10ccd7c08e6b8e0029b9d947d049009e4d03f588b1948689ac921cc7"
+      "sha256": "ff5aa8a7da9f7d71d3dc29d39f7701605f780f37217afa8d56bae247fcd1e267"
     },
     "lib/quiz.py": {
       "sha256": "de56e04c378c70f782497d5bdafa050a22db52579405f2d019bc28e4a17e5f78"
@@ -18,16 +18,22 @@
       "sha256": "bcebccb8b7dee29f94e8159e687ade5452f30669505fe98a68360c5b7ea14c43"
     },
     "lib/session_sync.py": {
-      "sha256": "b56522a6d3574f9fe1743dc4e7053729f08bfb397ad6c1315b197d10fa27880f"
+      "sha256": "6115a8aa25cf7c828f8bbde6297704b8f45f6156fb1d94af3b87c6dee3252c9c"
     },
     "lib/team_search.py": {
-      "sha256": "60aa8f9b8e9527311fc3342b76f4088d7e6473af47d8436eaa797442cfdfe489"
+      "sha256": "3c86cfb61eb68bbe6533f502d69d0fb23a9dcb371e93753b24bf044f875a3acc"
     },
     "lib/team_status.py": {
-      "sha256": "c9a89aeb547f332a0ba3279c2c8110f3ead10fd98413cbe3b5a653b89990bcc8"
+      "sha256": "06935ca75f8a22e129d92278e7dfc5933157cd683716303969319d8bc9c8c1d7"
     },
     "lib/week_summary.py": {
       "sha256": "2d8cb1139b939cffa148b5e25e4f4e132a02520de7893f261a8df03467cab354"
+    },
+    "lib/profile_cli.py": {
+      "sha256": "2c698710dfc61d1be09e21e3797a61f2c054c1c8a007ebd676e52fec38339112"
+    },
+    "lib/code_sync.py": {
+      "sha256": "e244cb150ffd90d0efdfe0cfa8212d680927b3d8ed7c09afe0bd0e9409257353"
     },
     "commands/quiz.md": {
       "sha256": "08bc4410247f8d5097c7f46169fcd334336a047540da1c57d4759f078c55789e"
@@ -62,8 +68,14 @@
     "commands/team-invite.md": {
       "sha256": "7aee1865a88c4a36475dcd32d5fd40d83158d36711460969b1f83ee4ed1a700a"
     },
+    "commands/code-sync.md": {
+      "sha256": "02b4e83b266241ffef0a1b8029d106ae42c369a01fb292398fa157eebbf1c77d"
+    },
+    "commands/profile.md": {
+      "sha256": "12cb3f199f142ecb6bb5794843d6153652f8c6fc70cf652ad29c235f21ed205e"
+    },
     "lib/architecture.py": {
-      "sha256": "502071ea33481fc96ca0c879b0edb0aaaad6cf180d352c6e6096e7b553e125b6"
+      "sha256": "1061d0a000317db916d16a448da57a3710d9e2766111f550874a456b7d0d0557"
     },
     "lib/team_invite.py": {
       "sha256": "1e5f7fabf31a75201c0f3b05d79c29b9804ff0ad08e831eb48b405c983ddd376"
