@@ -1,6 +1,6 @@
 {
   "name": "@thinkand/claude",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "think& — Team Knowledge Layer for Claude Code",
   "bin": {
     "thinkand-claude": "./bin/thinkand-claude.js"
@@ -8,7 +8,12 @@
   "scripts": {
     "build": "node src/build-manifest.js"
   },
-  "keywords": ["claude-code", "memory", "team", "knowledge"],
+  "keywords": [
+    "claude-code",
+    "memory",
+    "team",
+    "knowledge"
+  ],
   "license": "ISC",
   "files": [
     "bin/",
