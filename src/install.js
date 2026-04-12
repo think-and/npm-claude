@@ -54,17 +54,81 @@ async function install(args) {
   console.log("think& — Team Knowledge Layer for Claude Code");
   console.log("==============================================\n");
 
-  // Check for existing config
+  // Check for existing config.
+  //
+  // Two shapes are supported:
+  //   - Legacy flat:  {api_url, api_key, user_id, team_id}
+  //   - Multi-profile: {api_url, profiles: [{id, slug, api_key, ...}]}
+  //
+  // Previously this only checked `config.api_key`, which silently missed
+  // multi-profile configs and re-prompted users for create-team/join-team
+  // on every reinstall. Now both shapes are detected.
   let config = {};
   if (fs.existsSync(P.CONFIG_PATH)) {
     try {
       config = JSON.parse(fs.readFileSync(P.CONFIG_PATH, "utf8"));
-      if (config.api_key) {
-        console.log(`  Existing config found.`);
-        console.log(`  User: ${config.user_id}, Team: ${config.team_id || "(none)"}\n`);
+      const hasLegacyKey = typeof config.api_key === "string" && config.api_key.length > 0;
+      const hasProfiles = Array.isArray(config.profiles) && config.profiles.length > 0;
+
+      if (hasLegacyKey || hasProfiles) {
+        console.log("  Existing config found.");
+        if (hasProfiles) {
+          const slugs = config.profiles
+            .map((p) => p.slug || p.id || "?")
+            .join(", ");
+          console.log(`  ${config.profiles.length} profile(s): ${slugs}`);
+          console.log("  To add another profile (keeping existing ones), run:");
+          console.log("    /profile add personal <your-name>    (in Claude Code)");
+          console.log(
+            "    python3 ~/.bryonics/current/lib/profile_cli.py add personal <your-name>"
+          );
+          console.log("");
+        } else {
+          console.log(
+            `  User: ${config.user_id}, Team: ${config.team_id || "(none)"}\n`
+          );
+        }
+
         const reconfigure = await prompt("Reconfigure? (y/N)", "n");
         if (reconfigure.toLowerCase() !== "y") {
           return installRelease(config, force);
+        }
+
+        // Reconfigure=yes on a multi-profile config is destructive — it
+        // would replace the entire profiles[] array with a single freshly
+        // created one. Require an explicit second confirmation so a muscle-
+        // memory "y" doesn't nuke someone's carefully-bound personal +
+        // org setup.
+        if (hasProfiles) {
+          console.log("");
+          console.log(
+            "  Reconfiguring will REPLACE your existing profiles[] with a"
+          );
+          console.log(
+            "  single newly-created one. All current bindings in"
+          );
+          console.log(
+            "  ~/.bryonics/project-profiles.json will still reference the"
+          );
+          console.log(
+            "  old profile ids and become stale."
+          );
+          console.log("");
+          console.log(
+            "  To add a profile without replacing, use /profile add instead."
+          );
+          console.log("");
+          const confirm = await prompt(
+            "Replace all existing profiles? (y/N)",
+            "n"
+          );
+          if (confirm.toLowerCase() !== "y") {
+            console.log("  Aborted. No changes made.");
+            return;
+          }
+          // User explicitly opted in — reset the in-memory config so the
+          // create/join/personal flow below writes a fresh one.
+          config = {};
         }
       }
     } catch (e) {
