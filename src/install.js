@@ -75,10 +75,11 @@ async function install(args) {
   // API URL
   const apiUrl = await prompt("API URL", config.api_url || "http://64.23.139.13:8000");
 
-  // Choose: create or join
-  console.log("\n  1. Create a new team");
-  console.log("  2. Join an existing team\n");
-  const choice = await prompt("Choose (1 or 2)", "");
+  // Choose: create, join, or personal
+  console.log("\n  1. Create a new organization");
+  console.log("  2. Join an existing organization");
+  console.log("  3. Personal only (no team — just for you)\n");
+  const choice = await prompt("Choose (1, 2, or 3)", "");
 
   if (choice === "1") {
     // Create team
@@ -142,6 +143,41 @@ async function install(args) {
 
       console.log(`  ✓ Joined team "${resp.data.team_id}"`);
       console.log(`  ✓ Your API key: ${resp.data.api_key.slice(0, 20)}...`);
+      console.log("");
+    } catch (e) {
+      console.log(`  Error: Could not reach API at ${apiUrl}`);
+      console.log(`  ${e.message}`);
+      return;
+    }
+
+  } else if (choice === "3") {
+    // Personal profile — team-of-one
+    const userName = await prompt("Your name", process.env.USER || "");
+
+    console.log("\n  Creating personal profile...");
+    try {
+      const resp = await apiPost(apiUrl, "/v1/profile/personal", {
+        user_name: userName,
+      });
+
+      if (resp.status !== 200 || resp.data.error) {
+        console.log(`  Error: ${resp.data.error || resp.data.detail || "Unknown error"}`);
+        return;
+      }
+
+      config = {
+        api_url: apiUrl,
+        api_key: resp.data.api_key,
+        user_id: resp.data.user_id,
+        team_id: resp.data.team_id,
+        profile_kind: "personal",
+      };
+
+      console.log(`  ✓ Personal profile "${resp.data.profile_id}" created`);
+      console.log(`  ✓ Your API key: ${resp.data.api_key.slice(0, 20)}...`);
+      console.log("");
+      console.log(`  This profile is just for you. No teammates can see it.`);
+      console.log(`  Memories stay in your private namespace on the server.`);
       console.log("");
     } catch (e) {
       console.log(`  Error: Could not reach API at ${apiUrl}`);

@@ -26,6 +26,8 @@ const filesToCopy = {
   "lib/team_search.py": path.join(sourceDir, "lib", "team_search.py"),
   "lib/team_status.py": path.join(sourceDir, "lib", "team_status.py"),
   "lib/week_summary.py": path.join(sourceDir, "lib", "week_summary.py"),
+  "lib/profile_cli.py": path.join(sourceDir, "lib", "profile_cli.py"),
+  "lib/code_sync.py": path.join(sourceDir, "lib", "code_sync.py"),
   "commands/quiz.md": path.join(sourceDir, "commands", "quiz.md"),
   "commands/quiz-submit.md": path.join(sourceDir, "commands", "quiz-submit.md"),
   "commands/quiz-status.md": path.join(sourceDir, "commands", "quiz-status.md"),
@@ -37,6 +39,8 @@ const filesToCopy = {
   "commands/week-team.md": path.join(sourceDir, "commands", "week-team.md"),
   "commands/architecture.md": path.join(sourceDir, "commands", "architecture.md"),
   "commands/team-invite.md": path.join(sourceDir, "commands", "team-invite.md"),
+  "commands/code-sync.md": path.join(sourceDir, "commands", "code-sync.md"),
+  "commands/profile.md": path.join(sourceDir, "commands", "profile.md"),
   "lib/architecture.py": path.join(sourceDir, "lib", "architecture.py"),
   "lib/team_invite.py": path.join(sourceDir, "lib", "team_invite.py"),
 };
